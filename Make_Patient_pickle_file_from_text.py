@@ -26,7 +26,6 @@ def main_run(images_description = 'Bastien_Cervix_Uterus_Data_No_Applicator',
     patient_spacing_info = {}
     for Series_Description in Series_Descriptions:
         patient_spacing_info[Series_Description] = {}
-        Series_Descriptions = []
         for _, _, files in os.walk(os.path.join(path,Series_Description)):
             break
         file_list = [i for i in files if i.find('.txt') != -1 and i.find('Iteration') != -1]
