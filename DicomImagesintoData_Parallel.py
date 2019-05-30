@@ -61,6 +61,7 @@ def worker_def_write(A):
             try:
                 Dicom_data_class.Make_Contour_From_directory(item)
             except:
+                print(item)
                 print('failed?')
             q.task_done()
 
@@ -387,14 +388,14 @@ class DicomImagestoData:
                 os.rmdir(path)
             os.makedirs(path)
             counter, max_images = 0, 10
-            max_mask = np.argmax(self.mask,axis=-1)
-            non_zero_values = np.where(max_mask != 0)[-1]
+            summed_image = np.sum(self.mask,axis=-1)
+            non_zero_values = np.where(summed_image != 0)[-1]
             stop, start = non_zero_values[0],non_zero_values[-1]
             for i in range(start, stop):
                 image = copy.deepcopy(self.ArrayDicom[:, :, i])
                 image[image > 200] = 200
                 image[image < -50] = -50
-                image[max_mask[:, :, i] != 0] *= 5
+                image[summed_image[:, :, i] != 0] *= 5
                 scm.imsave(os.path.join(path, 'combined_' + str(i) + '.png'), image)
                 counter += 1
                 if counter > 10:
@@ -581,8 +582,7 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
                       pickle_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\master_associations.pkl')
     Folders_w_Contours = Find_Contour_Files(Contour_Names=Contour_Names, input_path=image_path, check_paths=k.paths_to_check).paths_to_check
 
-
-    thread_count = cpu_count() - 1  # Leaves you one thread for doing things with
+    thread_count = cpu_count() - 1 # Leaves you one thread for doing things with
     print('This is running on ' + str(thread_count) + ' threads')
     q = Queue(maxsize=thread_count)
     A = [q, Contour_Names, Contour_Key, image_path, out_path, images_description, pickle_path]
