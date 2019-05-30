@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import copy, pickle
+import pickle
 
 def load_obj(path):
     if path[-4:] != '.pkl':

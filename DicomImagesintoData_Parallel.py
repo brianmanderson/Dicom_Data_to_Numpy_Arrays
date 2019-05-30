@@ -2,7 +2,6 @@ import pydicom, os, sys
 sys.path.append('.')
 from pydicom.tag import Tag
 import numpy as np
-from matplotlib import pyplot
 import scipy.misc as scm
 from skimage import draw
 import copy
@@ -240,7 +239,7 @@ class Identify_RTs_Needed:
 
 
 class Find_Contour_Files(object):
-    def __init__(self, input_path = '',Contour_Names=[], check_paths = ['']):
+    def __init__(self, Contour_Names=[], check_paths = ['']):
         self.paths_to_check = {}
         self.Contour_Names = Contour_Names
         self.i = 0
@@ -257,11 +256,7 @@ class DicomImagestoData:
     def __init__(self,Contour_Names = ['Liver'],Contour_Key={'Liver':1},path='S:\\SHARED\\Radiation physics\\BMAnderson\\PhD\\Liver_Ablation_Exports\\',
                  data_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\CNN\\Cervical_Data\\', images_description= 'Images',
                  pickle_path = 'C:\\users\\bmanderson\\master_associations_Chung_6.29.18'):
-        #pool = multiprocessing.Pool(processes=10)
-        #num_cores = multiprocessing.cpu_count()
-        # self.make_pool()
         self.guiding_exams = {}
-
         self.data_path = data_path
         self.master_associations = load_obj(pickle_path)
         if 'associated' in self.master_associations.keys():
@@ -297,7 +292,6 @@ class DicomImagestoData:
         self.iteration = iteration
         self.prep_data(PathDicom)
         self.all_angles = [0]
-            #self.all_angles += [i+2.5 for i in self.all_angles]
         self.get_images()
         self.get_mask()
         for self.rotation_angle in self.all_angles:
@@ -409,9 +403,6 @@ class DicomImagestoData:
                                 self.images_description + '_Iteration_' + str(self.iteration) + '.txt'), 'w+')
         fid.write(str(self.ds.PatientID) + ',' + str(self.ds.SliceThickness) + ',' + str(self.ds.PixelSpacing[0]) + ',' + desc)
         fid.close()
-        # self.patient_spacing_info[self.images_description][self.iteration] = \
-        #     str(self.PathDicom.split('Images\\')[1]) + ',' + str(self.ds.SliceThickness) + ',' + str(self.ds.PixelSpacing[0]) + ',' + str(desc)
-        # save_obj(self.patient_spacing_info,self.data_path.split('Numpy')[0] + 'patient_info_' + self.images_description + '.pkl')
         return None
 
     def get_files_in_output_dirs(self,dirs):
@@ -434,9 +425,6 @@ class DicomImagestoData:
         self.got_file_list = True
 
     def get_images(self):
-        # Working on the RS structure now
-        # The array is sized based on 'ConstPixelDims'
-        # ArrayDicom = np.zeros(ConstPixelDims, dtype=RefDs.pixel_array.dtype)
         if self.lstRSFile:
             checking_mult = pydicom.read_file(self.lstRSFile)
             checking_mult = round(checking_mult.ROIContourSequence[0].ContourSequence[0].ContourData[2],2)
@@ -580,7 +568,7 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
     k = Identify_RTs_Needed(Contour_Names=Contour_Names, Contour_Key=Contour_Key,
                       path=image_path,images_description=images_description,ignore_lacking=True,
                       pickle_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\master_associations.pkl')
-    Folders_w_Contours = Find_Contour_Files(Contour_Names=Contour_Names, input_path=image_path, check_paths=k.paths_to_check).paths_to_check
+    Folders_w_Contours = Find_Contour_Files(Contour_Names=Contour_Names, check_paths=k.paths_to_check).paths_to_check
 
     thread_count = cpu_count() - 1 # Leaves you one thread for doing things with
     print('This is running on ' + str(thread_count) + ' threads')
