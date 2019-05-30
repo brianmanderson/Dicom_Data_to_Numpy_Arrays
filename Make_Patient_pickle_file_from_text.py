@@ -1,17 +1,4 @@
-import os, pickle
-
-
-def save_obj(obj, path): # Save almost anything.. dictionary, list, etc.
-    if path[-4:] != '.pkl':
-        path += '.pkl'
-    with open(path, 'wb') as f:
-        pickle.dump(obj, f, pickle.DEFAULT_PROTOCOL)
-    return None
-def load_obj(path):
-    if path[-4:] != '.pkl':
-        path += '.pkl'
-    with open(path, 'rb') as f:
-        return pickle.load(f)
+from Utils import os, save_obj
 
 
 def main_run(images_description = 'Bastien_Cervix_Uterus_Data_No_Applicator',
@@ -37,7 +24,7 @@ def main_run(images_description = 'Bastien_Cervix_Uterus_Data_No_Applicator',
             data = data.strip('\n')
             data = data.split(',')
             patient_spacing_info[Series_Description][iteration] = data[0] + ',' + data[1] + ',' + data[2]
-    save_obj(patient_spacing_info,os.path.join(base_path,'patient_info_' + images_description + '.pkl'))
+    save_obj(os.path.join(base_path,'patient_info_' + images_description + '.pkl'), patient_spacing_info)
 
 if __name__ == '__main__':
     xxx = 1

@@ -8,9 +8,10 @@ import copy
 from threading import Thread
 from multiprocessing import cpu_count
 from queue import *
-from Utils import save_obj, load_obj, plot_scroll_Image
+from Utils import load_obj, plot_scroll_Image
 from Make_Patient_pickle_file_from_text import main_run
 from Separate_Numpy_Images_Into_Test_Train_Validation import separate
+from Get_Path_Info import make_location_pickle
 
 
 def deletecontents(dirval):
@@ -587,6 +588,7 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
     for t in threads:
         t.join()
     main_run(images_description=images_description,base_path=base_path)
+    make_location_pickle(base_path,image_path,images_description)
     separate(desc=images_description, path_base=base_path)
 '''
 Run this one, then do 
