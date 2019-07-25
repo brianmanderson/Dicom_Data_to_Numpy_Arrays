@@ -70,4 +70,3 @@ def separate(desc='Bastien_Cervix_Uterus_Data_No_Applicator',path_base=r'K:\Morf
 
 if __name__ == '__main__':
     xxx = 1
-    separate(desc='',path_base=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\cancer_imaging_archive_Data\Numpy')

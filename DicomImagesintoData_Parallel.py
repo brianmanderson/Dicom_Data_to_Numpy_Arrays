@@ -70,6 +70,7 @@ class Check_RS_Structure(object):
         self.associations = associations
         self.ignore_lacking= ignore_lacking
         self.Contour_Names = Contour_Names
+        self.mask_exist = False
 
     def prep_data(self,PathDicom):
         self.PathDicom = PathDicom
@@ -597,8 +598,9 @@ then do
 Separate_Numpy_Images_Into_Test_Train_Validation.py
 '''
 if __name__ == '__main__':
-    base_path = r'K:\Morfeus\BMAnderson\CNN\Data\Data_Liver\Liver_Disease_Ablation_Segmentation'
-    images_description = 'Disease_Ablation'
-    out_path = os.path.join(base_path,'Numpy_' + images_description)
-    main(base_path=base_path,image_path=os.path.join(base_path,'Images'),out_path=out_path,
-         images_description=images_description, Contour_Names=['Liver','GTV','Ablation'])
+    xxx = 1
+    # base_path = r'K:\Morfeus\BMAnderson\CNN\Data\Data_Liver\Liver_Disease_Ablation_Segmentation'
+    # images_description = 'Disease_Ablation'
+    # out_path = os.path.join(base_path,'Numpy_' + images_description)
+    # main(base_path=base_path,image_path=os.path.join(base_path,'Images'),out_path=out_path,
+    #      images_description=images_description, Contour_Names=['Liver','GTV','Ablation'])
