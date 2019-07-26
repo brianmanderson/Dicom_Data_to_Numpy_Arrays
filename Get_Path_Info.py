@@ -17,7 +17,7 @@ def make_location_pickle(base_path, path, Description):
     output = get_iteration_location(path, Description=Description)
     key_list = list(output.keys())
     for key in key_list:
-        output[key] = output[key].split(path)[-1].split('\\')[1:]
+        output[key] = output[key].split(path)[-1].split('\\')[-1]
     save_obj(os.path.join(base_path, 'Data_Locations.pkl'), output)
     return None
 

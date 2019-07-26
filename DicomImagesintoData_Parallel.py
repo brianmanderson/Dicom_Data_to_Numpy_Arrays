@@ -1,6 +1,3 @@
-__author__ = 'Brian Mark Anderson'
-__email__ = 'bmanderson@mdanderson.org'
-
 import pydicom, os, sys
 sys.path.append('.')
 from pydicom.tag import Tag
@@ -143,6 +140,7 @@ class Find_Image_Folders(object):
     def __init__(self, input_path = '', images_description='Images', Contour_Names=[]):
         self.Contour_Names = Contour_Names
         self.paths_to_check = []
+        self.paths_done = []
         self.images_description = images_description
         self.down_folder(input_path)
 
@@ -161,6 +159,8 @@ class Find_Image_Folders(object):
             if not os.path.exists(os.path.join(input_path,'made_into_np_' + self.images_description + '.txt')) and go:
                 print(input_path)
                 self.paths_to_check.append(input_path)
+            elif os.path.exists(os.path.join(input_path,'made_into_np_' + self.images_description + '.txt')):
+                self.paths_done.append(input_path)
         for dir in dirs:
             new_directory = os.path.join(input_path,dir)
             self.down_folder(new_directory)
@@ -202,6 +202,7 @@ class Identify_RTs_Needed:
             q.put(None)
         for t in threads:
             t.join()
+        self.paths_to_check += Images_Check.paths_done
 
 
     def prep_data(self,PathDicom):
@@ -344,7 +345,6 @@ class DicomImagestoData:
         Overall_Array = self.ArrayDicom
         Overall_mask = self.mask
         self.perc_done += 1
-        go = True
         try:
             SeriesDescription = str(self.ds.SeriesDescription)
             if SeriesDescription.find('CT') != -1 or self.ds.Modality == 'CT':
@@ -380,25 +380,6 @@ class DicomImagestoData:
             print('--- error with series description..')
         if not self.got_file_list:
             self.get_files_in_output_dirs([add_info])
-        if go:
-            path = 'C:\\users\\bmanderson\\desktop\\images\\' + self.images_description + '\\' + str(self.iteration)
-            if os.path.exists(path):
-                deletecontents(path)
-                os.rmdir(path)
-            os.makedirs(path)
-            counter, max_images = 0, 10
-            summed_image = np.sum(self.mask,axis=-1)
-            non_zero_values = np.where(summed_image != 0)[-1]
-            stop, start = non_zero_values[0],non_zero_values[-1]
-            for i in range(start, stop):
-                image = copy.deepcopy(self.ArrayDicom[:, :, i])
-                image[image > 200] = 200
-                image[image < -50] = -50
-                image[summed_image[:, :, i] != 0] *= 5
-                scm.imsave(os.path.join(path, 'combined_' + str(i) + '.png'), image)
-                counter += 1
-                if counter > 10:
-                    break
         self.iterations['all_vals'].append(self.iteration)
         if not os.path.exists(os.path.join(self.data_path,add)):
             os.makedirs(os.path.join(self.data_path,add))
@@ -591,9 +572,9 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
         q.put(None)
     for t in threads:
         t.join()
-    main_run(images_description=images_description,base_path=base_path)
-    make_location_pickle(base_path,image_path,images_description)
-    separate(desc=images_description, path_base=base_path)
+    main_run(images_description=images_description,base_path=out_path)
+    make_location_pickle(out_path,image_path,images_description)
+    separate(desc=images_description, path_base=out_path)
 '''
 Run this one, then do 
 Make_Patient_pickle_file_from_text.py
