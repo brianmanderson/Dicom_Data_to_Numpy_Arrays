@@ -1,3 +1,6 @@
+__author__ = 'Brian Mark Anderson'
+__email__ = 'bmanderson@mdanderson.org'
+
 import pydicom, os, sys
 sys.path.append('.')
 from pydicom.tag import Tag
