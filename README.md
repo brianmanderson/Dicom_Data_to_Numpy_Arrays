@@ -1,4 +1,5 @@
 ## If you find this code useful, please provide a reference to my github page for others www.github.com/brianmanderson , thank you!
+# This code feeds into https://github.com/brianmanderson/Make_Single_Images
 This is for the creation of numpy arrays from dicom images and RT structures for deep learning purposes
 
 The DicomImagesintoData_Parallel should be able to create numpy arrays with a training/test/validation split
