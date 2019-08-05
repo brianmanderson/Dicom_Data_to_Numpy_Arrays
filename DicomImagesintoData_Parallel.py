@@ -2,9 +2,7 @@ import pydicom, os, sys
 sys.path.append('.')
 from pydicom.tag import Tag
 import numpy as np
-import scipy.misc as scm
 from skimage import draw
-import copy
 from threading import Thread
 from multiprocessing import cpu_count
 from queue import *
@@ -12,25 +10,6 @@ from Utils import load_obj, plot_scroll_Image
 from Make_Patient_pickle_file_from_text import main_run
 from Separate_Numpy_Images_Into_Test_Train_Validation import separate
 from Get_Path_Info import make_location_pickle
-
-
-def deletecontents(dirval):
-    dirlist = os.listdir(dirval)
-    for deletelist in dirlist:
-        fileremove = os.path.join(dirval,deletelist)
-        os.remove(fileremove)
-    return None
-
-
-def load_and_add_to_dict(A):
-    lstFilesDCM, Dicom_Data, lstRSFile, file = A
-    ds = pydicom.read_file(file)
-    if ds.Modality != 'RTSTRUCT':  # check whether the file's DICOM
-        lstFilesDCM.append(file)
-        Dicom_Data.append(ds)
-    elif ds.Modality == 'RTSTRUCT':
-        lstRSFile.append(file)
-    return None
 
 
 def worker_def(A):
@@ -205,45 +184,6 @@ class Identify_RTs_Needed:
         self.paths_to_check += Images_Check.paths_done
 
 
-    def prep_data(self,PathDicom):
-        self.PathDicom = PathDicom
-        self.lstFilesDCM = []
-        self.lstRSFile = []
-        self.Dicom_Data = []
-
-        fileList = []
-        for dirName, dirs, fileList in os.walk(PathDicom):
-            break
-        if len(fileList) < 10: # If there are no files, break out
-            return None
-        self.lstRSFile = [file for file in fileList if file.find('RS') == 0]
-        self.mask_exist = False
-        if self.lstRSFile:
-            self.lstRSFile = os.path.join(dirName,self.lstRSFile[0])
-            self.check_RS_file()
-            if self.mask_exist:
-                fid = open(os.path.join(PathDicom,''.join(self.Contour_Names)+'.txt'),'w+')
-                fid.close()
-            return None
-        for filename in fileList:
-            try:
-                ds = pydicom.read_file(os.path.join(dirName,filename))
-                if ds.Modality != 'RTSTRUCT':  # check whether the file's DICOM
-                    self.lstFilesDCM.append(os.path.join(dirName, filename))
-                    self.Dicom_Data.append(ds)
-                elif ds.Modality == 'RTSTRUCT':
-                    self.lstRSFile = os.path.join(dirName, filename)
-                    if self.lstRSFile and not self.mask_exist:
-                        self.check_RS_file()
-                        if self.mask_exist:
-                            fid = open(os.path.join(PathDicom, ''.join(self.Contour_Names) + '.txt'), 'w+')
-                            fid.close()
-                        return None
-            except:
-                continue
-        return None
-
-
 class Find_Contour_Files(object):
     def __init__(self, Contour_Names=[], check_paths = ['']):
         self.paths_to_check = {}
@@ -383,8 +323,8 @@ class DicomImagestoData:
         self.iterations['all_vals'].append(self.iteration)
         if not os.path.exists(os.path.join(self.data_path,add)):
             os.makedirs(os.path.join(self.data_path,add))
-        np.save(os.path.join(self.data_path, add, 'Overall_Data_' + self.images_description + '_' + add_info + '_' + str(self.iteration)),Overall_Array)
-        np.save(os.path.join(self.data_path, add, 'Overall_mask_' + self.images_description + '_' + add_info + '_y' + str(self.iteration)),Overall_mask)
+        np.save(os.path.join(self.data_path, add, 'Overall_Data_' + self.images_description + '_' + add_info + '_' + str(self.iteration)),Overall_Array.astype('float32'))
+        np.save(os.path.join(self.data_path, add, 'Overall_mask_' + self.images_description + '_' + add_info + '_y' + str(self.iteration)),Overall_mask.astype('bool'))
         fid = open(os.path.join(self.data_path, add,
                                 self.images_description + '_Iteration_' + str(self.iteration) + '.txt'), 'w+')
         fid.write(str(self.ds.PatientID) + ',' + str(self.ds.SliceThickness) + ',' + str(self.ds.PixelSpacing[0]) + ',' + desc)
@@ -544,7 +484,7 @@ class DicomImagestoData:
 
 def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Images',
          out_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Numpy', images_description='',
-         Contour_Names=['GTV','Ablation'],base_path=''):
+         Contour_Names=['gtv','ablation'],base_path=''):
     Contour_Names = [i.lower() for i in Contour_Names]
     Contour_Key = {}
     for i, name in enumerate(Contour_Names):
