@@ -242,12 +242,10 @@ class DicomImagestoData:
         PathDicom, iteration = A
         self.iteration = iteration
         self.prep_data(PathDicom)
-        self.all_angles = [0]
         self.get_images()
         self.get_mask()
-        for self.rotation_angle in self.all_angles:
-            self.mask_array_and_mask()
-            print('iteration ' + str(self.iteration) + ' completed')
+        self.mask_array_and_mask()
+        print('iteration ' + str(self.iteration) + ' completed')
         fid = open(os.path.join(PathDicom,'made_into_np_' + self.images_description + '.txt'),'w+')
         fid.close()
         fid = open(os.path.join(PathDicom,self.images_description + '_Iteration_' + str(self.iteration) + '.txt'),'w+')
@@ -392,7 +390,7 @@ class DicomImagestoData:
             elif min([abs(i - checking_mult) for i in self.slice_locations]) < 0.01:
                 self.mult = -1
             else:
-                print('Slice values are off..')
+                print('Slice values are off..' + self.PathDicom)
                 self.skip_val = True
                 return None
         self.ArrayDicom = (self.ArrayDicom+RescaleIntercept)/RescaleSlope
