@@ -11,6 +11,15 @@ from Make_Patient_pickle_file_from_text import main_run
 from Separate_Numpy_Images_Into_Test_Train_Validation import separate
 from Get_Path_Info import make_location_pickle
 
+def correct_association_file(associations):
+    '''
+    :param associations: dictionary of associations
+    :return: dictionary with keys and results lower-cased
+    '''
+    new_associations = {}
+    for key in associations:
+        new_associations[key.lower()] = associations[key].lower()
+    return new_associations
 
 def worker_def(A):
     q, associations, Contour_Names, ignore_lacking = A
@@ -27,11 +36,11 @@ def worker_def(A):
             q.task_done()
 
 def worker_def_write(A):
-    q, Contour_Names, Contour_Key, path, data_path, images_description, pickle_path = A
+    q, Contour_Names, Contour_Key, path, data_path, images_description, associations = A
     Dicom_data_class = DicomImagestoData(Contour_Names=Contour_Names, Contour_Key=Contour_Key,
                       path=path,
                       data_path=data_path,images_description=images_description,
-                      pickle_path=pickle_path)
+                      associations=associations)
     while True:
         item = q.get()
         if item is None:
@@ -112,9 +121,9 @@ class Check_RS_Structure(object):
             self.mask_exist = False
             for roi in self.Contour_Names:
                 if roi.lower() not in self.rois_in_case:
-                    print('lacking ' + roi)
+                    print(self.PathDicom + ' lacking ' + roi)
         else:
-            fid = open(os.path.join(self.PathDicom, ''.join(self.Contour_Names) + '.txt'), 'w+')
+            fid = open(os.path.join(self.PathDicom,''.join(self.Contour_Names) + '.txt'), 'w+')
             fid.close()
 
 
@@ -152,14 +161,10 @@ class Find_Image_Folders(object):
 class Identify_RTs_Needed:
     def __init__(self,Contour_Names = ['Liver'],Contour_Key={'Liver':1},images_description= 'Images',
                  path='S:\\SHARED\\Radiation physics\\BMAnderson\\PhD\\Liver_Ablation_Exports\\',
-                 pickle_path = 'C:\\users\\bmanderson\\master_associations_Chung_6.29.18', ignore_lacking=False):
+                 associations = None, ignore_lacking=False):
         self.ignore_lacking = ignore_lacking
         self.images_description = images_description
-        self.master_associations = load_obj(pickle_path)
-        if 'associated' in self.master_associations.keys():
-            self.associations = self.master_associations['associated']
-        else:
-            self.associations = {}
+        self.associations = associations
         for roi in Contour_Names:
             if roi not in self.associations:
                 self.associations[roi] = roi
@@ -169,6 +174,7 @@ class Identify_RTs_Needed:
         Images_Check = Find_Image_Folders(input_path=path, images_description=images_description, Contour_Names=Contour_Names)
         self.paths_to_check = Images_Check.paths_to_check
         thread_count = cpu_count() - 1 # Leaves you one thread for doing things with
+        # thread_count = 1
         print('This is running on ' + str(thread_count) + ' threads')
         q = Queue(maxsize=thread_count)
         A = [q,self.associations, Contour_Names, ignore_lacking]
@@ -203,15 +209,11 @@ class Find_Contour_Files(object):
 class DicomImagestoData:
     image_size = 512
     def __init__(self,Contour_Names = ['Liver'],Contour_Key={'Liver':1},path='S:\\SHARED\\Radiation physics\\BMAnderson\\PhD\\Liver_Ablation_Exports\\',
-                 data_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\CNN\\Cervical_Data\\', images_description= 'Images',
-                 pickle_path = 'C:\\users\\bmanderson\\master_associations_Chung_6.29.18'):
+                 data_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\CNN\\Cervical_Data\\',
+                 images_description= 'Images',associations=None):
         self.guiding_exams = {}
         self.data_path = data_path
-        self.master_associations = load_obj(pickle_path)
-        if 'associated' in self.master_associations.keys():
-            self.associations = self.master_associations['associated']
-        else:
-            self.associations = {}
+        self.associations = associations
         for roi in Contour_Names:
             if roi not in self.associations:
                 self.associations[roi] = roi
@@ -485,24 +487,36 @@ class DicomImagestoData:
         mask[fill_row_coords, fill_col_coords] = True
         return mask
 
-def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Images',
+def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Images',ignore_lacking=False,
          out_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Numpy', images_description='',
-         Contour_Names=['gtv','ablation'],base_path=''):
+         Contour_Names=['gtv','ablation'],associations=None):
+    '''
+    :param image_path: Path to the image files
+    :param ignore_lacking: Ignore when a structure lacks all necessary contours, experimental
+    :param out_path: Path to output folder
+    :param images_description: Description of images
+    :param Contour_Names: list of contour names desired
+    :param associations: a dictionary of ROI_Name: Desired_ROI_Name
+    :return:
+    '''
+    associations = correct_association_file(associations) # Make the keys and results lower-case
     Contour_Names = [i.lower() for i in Contour_Names]
     Contour_Key = {}
     for i, name in enumerate(Contour_Names):
         Contour_Key[name] = i + 1
-    pickle_path = '\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\master_associations.pkl'
     start_pat = 0
     k = Identify_RTs_Needed(Contour_Names=Contour_Names, Contour_Key=Contour_Key,
-                      path=image_path,images_description=images_description,ignore_lacking=True,
-                      pickle_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\master_associations.pkl')
+                      path=image_path,images_description=images_description,ignore_lacking=ignore_lacking,
+                      associations=associations)
     Folders_w_Contours = Find_Contour_Files(Contour_Names=Contour_Names, check_paths=k.paths_to_check).paths_to_check
 
     thread_count = cpu_count() - 1 # Leaves you one thread for doing things with
+    # thread_count = 1
     print('This is running on ' + str(thread_count) + ' threads')
     q = Queue(maxsize=thread_count)
-    A = [q, Contour_Names, Contour_Key, image_path, out_path, images_description, pickle_path]
+    A = [q, Contour_Names, Contour_Key, image_path, out_path, images_description, associations]
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
     threads = []
     for worker in range(thread_count):
         t = Thread(target=worker_def_write, args=(A,))

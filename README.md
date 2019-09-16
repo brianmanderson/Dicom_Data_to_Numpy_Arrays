@@ -8,11 +8,14 @@ You will need to define the contour names that you want to create
 
 
     from DicomImagesintoData_Parallel import main
-    Contour_Names = ['Liver']
+    Contour_Names = ['liver']
     path = '\\\\server\\location\\Liver_Patients\\Patient_Images\\'
     # Where the location above has folders with patient images. The RT structures and images must be in the same folder!
     out_path = '\\\\server\\location\\Liver_Patients\\Numpy_Arrays\\'
     images_description = 'My_Liver_Images'
-    main(Contour_Names,path,out_path,images_description)
+    associations = {'liver_bma_program':'liver'}
+    main(image_path=path,out_path=out_path,images_description=images_description,
+         Contour_Names=Contour_Names,
+         associations=assocations)
     # The output should be '\\server\\location\\Liver_Patients\\Numpy_Arrays\\My_Liver_Images\\(Train\Test\Validation)'
 
