@@ -103,10 +103,13 @@ class Check_RS_Structure(object):
         for roi in self.rois_in_case:
             if roi in self.associations and self.associations[roi] in self.Contour_Names:
                 self.mask_exist = True
-                comparing.append(self.associations[roi])
+                roi_name = self.associations[roi]
+                if roi_name not in comparing:
+                    comparing.append(roi_name)
                 if len(comparing) == len(self.Contour_Names):
                     break
         if not set(self.Contour_Names).issubset(comparing) and not self.ignore_lacking:
+            self.mask_exist = False
             for roi in self.Contour_Names:
                 if roi.lower() not in self.rois_in_case:
                     print('lacking ' + roi)
