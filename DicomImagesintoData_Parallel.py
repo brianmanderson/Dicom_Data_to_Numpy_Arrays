@@ -194,17 +194,34 @@ class Identify_RTs_Needed:
 
 
 class Find_Contour_Files(object):
-    def __init__(self, Contour_Names=[], check_paths = ['']):
+    def __init__(self, Contour_Names=[], check_paths = [''],images_description=''):
         self.paths_to_check = {}
-        self.Contour_Names = Contour_Names
+        self.temp_paths_to_check = []
+        iterations = []
         self.i = 0
+        self.Contour_Names = Contour_Names
         for path in check_paths:
             files = []
             for _, _, files in os.walk(path):
                 break
-            if ''.join(self.Contour_Names) + '.txt' in files:
-                self.paths_to_check[path] = self.i
+            iteration_files = [i for i in files if i.find('Iteration_') != -1]
+            include = True
+            if iteration_files:
+                for i in iteration_files:
+                    if i.split('_Iteration_')[0] == images_description:
+                        iteration = int(i.split('Iteration_')[1].split('.txt')[0])
+                        iterations.append(iteration)
+                        include = False
+                        if 'made_into_np_' + images_description + '.txt' not in files:
+                            self.paths_to_check[path] = iteration
+                        break
+            if include:
+                if ''.join(self.Contour_Names) + '.txt' in files:
+                    self.temp_paths_to_check.append(path)
+        for path in self.temp_paths_to_check:
+            while self.i in iterations:
                 self.i += 1
+            self.paths_to_check[path] = self.i
 
 class DicomImagestoData:
     image_size = 512
@@ -390,9 +407,7 @@ class DicomImagestoData:
             elif min([abs(i - checking_mult) for i in self.slice_locations]) < 0.01:
                 self.mult = -1
             else:
-                print('Slice values are off..' + self.PathDicom)
-                self.skip_val = True
-                return None
+                print('slice vals are off ' + self.PathDicom)
         self.ArrayDicom = (self.ArrayDicom+RescaleIntercept)/RescaleSlope
         indexes = [i[0] for i in sorted(enumerate(self.slice_locations), key=lambda x: x[1])]
         self.ArrayDicom = self.ArrayDicom[:, :, indexes]
