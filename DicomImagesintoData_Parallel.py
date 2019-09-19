@@ -222,6 +222,7 @@ class Find_Contour_Files(object):
             while self.i in iterations:
                 self.i += 1
             self.paths_to_check[path] = self.i
+            iterations.append(self.i)
 
 class DicomImagestoData:
     image_size = 512
