@@ -112,10 +112,13 @@ class Check_RS_Structure(object):
         for roi in self.rois_in_case:
             if roi in self.associations and self.associations[roi] in self.Contour_Names:
                 self.mask_exist = True
-                comparing.append(self.associations[roi])
+                roi_name = self.associations[roi]
+                if roi_name not in comparing:
+                    comparing.append(roi_name)
                 if len(comparing) == len(self.Contour_Names):
                     break
         if not set(self.Contour_Names).issubset(comparing) and not self.ignore_lacking:
+            self.mask_exist = False
             for roi in self.Contour_Names:
                 if roi.lower() not in self.rois_in_case:
                     print(self.PathDicom + ' lacking ' + roi)
@@ -191,17 +194,35 @@ class Identify_RTs_Needed:
 
 
 class Find_Contour_Files(object):
-    def __init__(self, Contour_Names=[], check_paths = ['']):
+    def __init__(self, Contour_Names=[], check_paths = [''],images_description=''):
         self.paths_to_check = {}
-        self.Contour_Names = Contour_Names
+        self.temp_paths_to_check = []
+        iterations = []
         self.i = 0
+        self.Contour_Names = Contour_Names
         for path in check_paths:
             files = []
             for _, _, files in os.walk(path):
                 break
-            if ''.join(self.Contour_Names) + '.txt' in files:
-                self.paths_to_check[path] = self.i
+            iteration_files = [i for i in files if i.find('Iteration_') != -1]
+            include = True
+            if iteration_files:
+                for i in iteration_files:
+                    if i.split('_Iteration_')[0] == images_description:
+                        iteration = int(i.split('Iteration_')[1].split('.txt')[0])
+                        iterations.append(iteration)
+                        include = False
+                        if 'made_into_np_' + images_description + '.txt' not in files:
+                            self.paths_to_check[path] = iteration
+                        break
+            if include:
+                if ''.join(self.Contour_Names) + '.txt' in files:
+                    self.temp_paths_to_check.append(path)
+        for path in self.temp_paths_to_check:
+            while self.i in iterations:
                 self.i += 1
+            self.paths_to_check[path] = self.i
+            iterations.append(self.i)
 
 class DicomImagestoData:
     image_size = 512
@@ -239,12 +260,10 @@ class DicomImagestoData:
         PathDicom, iteration = A
         self.iteration = iteration
         self.prep_data(PathDicom)
-        self.all_angles = [0]
         self.get_images()
         self.get_mask()
-        for self.rotation_angle in self.all_angles:
-            self.mask_array_and_mask()
-            print('iteration ' + str(self.iteration) + ' completed')
+        self.mask_array_and_mask()
+        print('iteration ' + str(self.iteration) + ' completed')
         fid = open(os.path.join(PathDicom,'made_into_np_' + self.images_description + '.txt'),'w+')
         fid.close()
         fid = open(os.path.join(PathDicom,self.images_description + '_Iteration_' + str(self.iteration) + '.txt'),'w+')
@@ -389,9 +408,7 @@ class DicomImagestoData:
             elif min([abs(i - checking_mult) for i in self.slice_locations]) < 0.01:
                 self.mult = -1
             else:
-                print('Slice values are off..')
-                self.skip_val = True
-                return None
+                print('slice vals are off ' + self.PathDicom)
         self.ArrayDicom = (self.ArrayDicom+RescaleIntercept)/RescaleSlope
         indexes = [i[0] for i in sorted(enumerate(self.slice_locations), key=lambda x: x[1])]
         self.ArrayDicom = self.ArrayDicom[:, :, indexes]
