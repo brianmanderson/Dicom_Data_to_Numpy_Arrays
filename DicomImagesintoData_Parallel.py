@@ -10,6 +10,7 @@ from Utils import load_obj, plot_scroll_Image
 from Make_Patient_pickle_file_from_text import main_run
 from Separate_Numpy_Images_Into_Test_Train_Validation import separate
 from Get_Path_Info import make_location_pickle
+import nibabel as nib
 
 def correct_association_file(associations):
     '''
@@ -147,10 +148,10 @@ class Find_Image_Folders(object):
                 break
         if file:
             go = True
-            if not os.path.exists(os.path.join(input_path,'made_into_np_' + self.images_description + '.txt')) and go:
+            if not os.path.exists(os.path.join(input_path,'made_into_nii_' + self.images_description + '.txt')) and go:
                 print(input_path)
                 self.paths_to_check.append(input_path)
-            elif os.path.exists(os.path.join(input_path,'made_into_np_' + self.images_description + '.txt')):
+            elif os.path.exists(os.path.join(input_path,'made_into_nii_' + self.images_description + '.txt')):
                 self.paths_done.append(input_path)
         for dir in dirs:
             new_directory = os.path.join(input_path,dir)
@@ -212,7 +213,7 @@ class Find_Contour_Files(object):
                         iteration = int(i.split('Iteration_')[1].split('.txt')[0])
                         iterations.append(iteration)
                         include = False
-                        if 'made_into_np_' + images_description + '.txt' not in files:
+                        if 'made_into_nii_' + images_description + '.txt' not in files:
                             self.paths_to_check[path] = iteration
                         break
             if include:
@@ -264,7 +265,7 @@ class DicomImagestoData:
         self.get_mask()
         self.mask_array_and_mask()
         print('iteration ' + str(self.iteration) + ' completed')
-        fid = open(os.path.join(PathDicom,'made_into_np_' + self.images_description + '.txt'),'w+')
+        fid = open(os.path.join(PathDicom,'made_into_nii_' + self.images_description + '.txt'),'w+')
         fid.close()
         fid = open(os.path.join(PathDicom,self.images_description + '_Iteration_' + str(self.iteration) + '.txt'),'w+')
         fid.close()
@@ -344,8 +345,13 @@ class DicomImagestoData:
         self.iterations['all_vals'].append(self.iteration)
         if not os.path.exists(os.path.join(self.data_path,add)):
             os.makedirs(os.path.join(self.data_path,add))
-        np.save(os.path.join(self.data_path, add, 'Overall_Data_' + self.images_description + '_' + add_info + '_' + str(self.iteration)),Overall_Array.astype('float32'))
-        np.save(os.path.join(self.data_path, add, 'Overall_mask_' + self.images_description + '_' + add_info + '_y' + str(self.iteration)),Overall_mask.astype('bool'))
+        image_path = os.path.join(self.data_path, add, 'Overall_Data_' + self.images_description + '_' + add_info + '_' + str(self.iteration))
+        new_image = nib.Nifti1Image(Overall_Array.astype('float32'), affine=np.eye(4))
+        nib.save(new_image, image_path)
+        dtype = 'int8'
+        annotation_path = os.path.join(self.data_path, add, 'Overall_mask_' + self.images_description + '_' + add_info + '_y' + str(self.iteration))
+        new_annotation = nib.Nifti1Image(Overall_mask.astype(dtype), affine=np.eye(4))
+        nib.save(new_annotation, annotation_path)
         fid = open(os.path.join(self.data_path, add,
                                 self.images_description + '_Iteration_' + str(self.iteration) + '.txt'), 'w+')
         fid.write(str(self.ds.PatientID) + ',' + str(self.ds.SliceThickness) + ',' + str(self.ds.PixelSpacing[0]) + ',' + desc)

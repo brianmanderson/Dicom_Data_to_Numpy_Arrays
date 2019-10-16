@@ -32,7 +32,7 @@ def separate(desc='Bastien_Cervix_Uterus_Data_No_Applicator',path_base=r'K:\Morf
         image_dict = dict()
         i = 0
         patient_file_associations = {}
-        file_list = [i for i in os.listdir(all_images) if i.find('.npy') != -1]
+        file_list = [i for i in os.listdir(all_images) if i.find('.nii') != -1]
         for file in file_list:
             if file.find('Overall_Data') == 0:
                 continue
@@ -44,7 +44,7 @@ def separate(desc='Bastien_Cervix_Uterus_Data_No_Applicator',path_base=r'K:\Morf
             image[-1] = image_end
             image = ''.join(image)
             image_dict[i] = [image,mask]
-            iteration = image.split('_')[-1].split('.npy')[0]
+            iteration = image.split('_')[-1].split('.nii')[0]
             print(file)
             patient_MRN = patient_dict[iteration].split('\\')[0].split(',')[0]
             if patient_MRN not in patient_file_associations.keys():
