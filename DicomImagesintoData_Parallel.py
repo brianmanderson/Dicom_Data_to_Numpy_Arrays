@@ -345,11 +345,11 @@ class DicomImagestoData:
         self.iterations['all_vals'].append(self.iteration)
         if not os.path.exists(os.path.join(self.data_path,add)):
             os.makedirs(os.path.join(self.data_path,add))
-        image_path = os.path.join(self.data_path, add, 'Overall_Data_' + self.images_description + '_' + add_info + '_' + str(self.iteration))
+        image_path = os.path.join(self.data_path, add, 'Overall_Data_' + self.images_description + '_' + add_info + '_' + str(self.iteration) + '.nii.gz')
         new_image = nib.Nifti1Image(Overall_Array.astype('float32'), affine=np.eye(4))
         nib.save(new_image, image_path)
         dtype = 'int8'
-        annotation_path = os.path.join(self.data_path, add, 'Overall_mask_' + self.images_description + '_' + add_info + '_y' + str(self.iteration))
+        annotation_path = os.path.join(self.data_path, add, 'Overall_mask_' + self.images_description + '_' + add_info + '_y' + str(self.iteration) + '.nii.gz')
         new_annotation = nib.Nifti1Image(Overall_mask.astype(dtype), affine=np.eye(4))
         nib.save(new_annotation, annotation_path)
         fid = open(os.path.join(self.data_path, add,
@@ -368,7 +368,7 @@ class DicomImagestoData:
             for file in os.listdir(os.path.join(self.data_path,dir_val)):
                 if file.find('Overall_Data') == 0:
                     file = file.split(self.images_description)[1]
-                    iteration = file.split('_')[-1][:-4]
+                    iteration = file.split('_')[-1].split('.')[0]
                     iterations[dir_val].append(int(iteration))
                     all_vals.append(int(iteration))
             iterations[dir_val].sort()
