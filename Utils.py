@@ -1,4 +1,4 @@
-import os, pickle
+import os, pickle, copy
 import numpy as np
 import matplotlib.pyplot as plt
 
