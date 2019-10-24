@@ -162,7 +162,7 @@ class Find_Image_Folders(object):
 class Identify_RTs_Needed:
     def __init__(self,Contour_Names = ['Liver'],Contour_Key={'Liver':1},images_description= 'Images',
                  path='S:\\SHARED\\Radiation physics\\BMAnderson\\PhD\\Liver_Ablation_Exports\\',
-                 associations = None, ignore_lacking=False):
+                 associations = None, ignore_lacking=False, thread_count=int(cpu_count()*.75-1)):
         self.ignore_lacking = ignore_lacking
         self.images_description = images_description
         self.associations = associations
@@ -174,8 +174,6 @@ class Identify_RTs_Needed:
         print('This is running on ' + self.Contour_Names[0] + ' contours')
         Images_Check = Find_Image_Folders(input_path=path, images_description=images_description, Contour_Names=Contour_Names)
         self.paths_to_check = Images_Check.paths_to_check
-        thread_count = cpu_count() - 1 # Leaves you one thread for doing things with
-        # thread_count = 1
         print('This is running on ' + str(thread_count) + ' threads')
         q = Queue(maxsize=thread_count)
         A = [q,self.associations, Contour_Names, ignore_lacking]
@@ -485,7 +483,7 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
     start_pat = 0
     k = Identify_RTs_Needed(Contour_Names=Contour_Names, Contour_Key=Contour_Key,
                       path=image_path,images_description=images_description,ignore_lacking=ignore_lacking,
-                      associations=associations)
+                      associations=associations, thread_count=thread_count)
     Folders_w_Contours = Find_Contour_Files(Contour_Names=Contour_Names, check_paths=k.paths_to_check).paths_to_check
 
     print('This is running on ' + str(thread_count) + ' threads')
