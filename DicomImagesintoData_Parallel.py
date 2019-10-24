@@ -473,6 +473,8 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
     :param images_description: Description of images
     :param Contour_Names: list of contour names desired
     :param associations: a dictionary of ROI_Name: Desired_ROI_Name
+    :param thread_count: the number of threads to use
+    :param argmax: if the mask should be collapsed based on np.argmax()
     :return:
     '''
     associations = correct_association_file(associations) # Make the keys and results lower-case
