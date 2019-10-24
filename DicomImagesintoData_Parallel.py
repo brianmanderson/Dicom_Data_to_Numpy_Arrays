@@ -37,11 +37,11 @@ def worker_def(A):
             q.task_done()
 
 def worker_def_write(A):
-    q, Contour_Names, Contour_Key, path, data_path, images_description, associations = A
+    q, Contour_Names, Contour_Key, path, data_path, images_description, associations, argmax = A
     Dicom_data_class = DicomImagestoData(Contour_Names=Contour_Names, Contour_Key=Contour_Key,
                       path=path,
                       data_path=data_path,images_description=images_description,
-                      associations=associations)
+                      associations=associations, argmax=argmax)
     while True:
         item = q.get()
         if item is None:
@@ -229,7 +229,8 @@ class DicomImagestoData:
     image_size = 512
     def __init__(self,Contour_Names = ['Liver'],Contour_Key={'Liver':1},path='S:\\SHARED\\Radiation physics\\BMAnderson\\PhD\\Liver_Ablation_Exports\\',
                  data_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\CNN\\Cervical_Data\\',
-                 images_description= 'Images',associations=None):
+                 images_description= 'Images',associations=None, argmax=True):
+        self.argmax = argmax
         self.guiding_exams = {}
         self.reader = sitk.ImageSeriesReader()
         self.reader.MetaDataDictionaryArrayUpdateOn()
@@ -346,6 +347,8 @@ class DicomImagestoData:
         annotation_path = os.path.join(self.data_path, add, 'Overall_mask_' + self.images_description + '_' + add_info + '_y' + str(self.iteration) + '.nii.gz')
         new_annotation = sitk.GetImageFromArray(self.mask.astype(dtype))
         new_annotation.SetSpacing(self.dicom_images.GetSpacing())
+        new_annotation.SetOrigin(self.dicom_images.GetOrigin())
+        new_annotation.SetDirection(self.dicom_images.GetDirection())
         sitk.WriteImage(new_annotation,annotation_path)
         fid = open(os.path.join(self.data_path, add,
                                 self.images_description + '_Iteration_' + str(self.iteration) + '.txt'), 'w+')
@@ -377,12 +380,11 @@ class DicomImagestoData:
         # slice_location_key = "0020|1041"
         sop_instance_UID_key = "0008|0018"
         self.SOPInstanceUIDs = [self.reader.GetMetaData(i,sop_instance_UID_key) for i in range(self.dicom_images.GetDepth())]
-        self.ArrayDicom = np.transpose(sitk.GetArrayFromImage(self.dicom_images),axes=(1,2,0))
-        self.image_size_1, self.image_size_2, _ = self.dicom_images.GetSize()
+        self.image_size_1, self.image_size_2, self.num_images = self.dicom_images.GetSize()
 
     def get_mask(self):
-        self.mask = np.zeros([self.image_size_1, self.image_size_2, len(self.dicom_names), len(self.Contour_Names)],
-                             dtype='float32')
+        self.mask = np.zeros([self.num_images,self.image_size_1, self.image_size_2, len(self.Contour_Names)+1],
+                             dtype='int8')
 
         self.structure_references = {}
         for contour_number in range(len(self.RS_struct.ROIContourSequence)):
@@ -414,7 +416,9 @@ class DicomImagestoData:
             if found_rois[ROI_Name]['Roi_Number'] in self.structure_references:
                 index = self.structure_references[found_rois[ROI_Name]['Roi_Number']]
                 mask = self.get_mask_for_contour(index)
-                self.mask[...,self.Contour_Names.index(ROI_Name)][mask == 1] = 1
+                self.mask[...,self.Contour_Names.index(ROI_Name)+1][mask == 1] = 1
+        if self.argmax:
+            self.mask = np.argmax(self.mask,axis=-1)
         return None
 
     def get_mask_for_contour(self,i):
@@ -422,7 +426,7 @@ class DicomImagestoData:
         return self.Contours_to_mask()
 
     def Contours_to_mask(self):
-        mask = np.zeros([self.image_size_1, self.image_size_2, len(self.dicom_names)], dtype='int8')
+        mask = np.zeros([self.num_images, self.image_size_1, self.image_size_2], dtype='int8')
         Contour_data = self.Liver_Locations
         ShiftCols, ShiftRows, _ = [float(i) for i in self.reader.GetMetaData(0,"0020|0032").split('\\')]
         # ShiftCols = self.ds.ImagePositionPatient[0]
@@ -448,7 +452,7 @@ class DicomImagestoData:
             col_val = [Mag * abs(x - mult1 * ShiftRows) for x in cols]
             row_val = [Mag * abs(x - mult2 * ShiftCols) for x in rows]
             temp_mask = self.poly2mask(col_val, row_val, [self.image_size_1, self.image_size_2])
-            mask[:,:,slice_index][temp_mask > 0] = 1
+            mask[slice_index][temp_mask > 0] = 1
             #scm.imsave('C:\\Users\\bmanderson\\desktop\\images\\mask_'+str(i)+'.png',mask_slice)
 
         return mask
@@ -461,7 +465,7 @@ class DicomImagestoData:
 
 def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Images',ignore_lacking=False,
          out_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Numpy', images_description='',
-         Contour_Names=['gtv','ablation'],associations=None, thread_count = int(cpu_count()*0.75-1)):
+         Contour_Names=['gtv','ablation'],associations=None,argmax=True, thread_count = int(cpu_count()*0.75-1)):
     '''
     :param image_path: Path to the image files
     :param ignore_lacking: Ignore when a structure lacks all necessary contours, experimental
@@ -484,7 +488,7 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
 
     print('This is running on ' + str(thread_count) + ' threads')
     q = Queue(maxsize=thread_count)
-    A = [q, Contour_Names, Contour_Key, image_path, out_path, images_description, associations]
+    A = [q, Contour_Names, Contour_Key, image_path, out_path, images_description, associations, argmax]
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     threads = []
