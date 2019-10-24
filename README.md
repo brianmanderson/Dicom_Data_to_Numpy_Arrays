@@ -14,8 +14,9 @@ You will need to define the contour names that you want to create
     out_path = '\\\\server\\location\\Liver_Patients\\Numpy_Arrays\\'
     images_description = 'My_Liver_Images'
     associations = {'liver_bma_program':'liver'}
+    argmax = True # If structures do not overlap, allows annotations to be viewed in vv
     main(image_path=path,out_path=out_path,images_description=images_description,
          Contour_Names=Contour_Names,
-         associations=assocations)
+         associations=assocations, argmax=argmax)
     # The output should be '\\server\\location\\Liver_Patients\\Numpy_Arrays\\My_Liver_Images\\(Train\Test\Validation)'
 
