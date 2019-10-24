@@ -422,7 +422,7 @@ class DicomImagestoData:
         return self.Contours_to_mask()
 
     def Contours_to_mask(self):
-        mask = np.zeros([self.image_size_1, self.image_size_2, len(self.dicom_names)], dtype='float32')
+        mask = np.zeros([self.image_size_1, self.image_size_2, len(self.dicom_names)], dtype='int8')
         Contour_data = self.Liver_Locations
         ShiftCols, ShiftRows, _ = [float(i) for i in self.reader.GetMetaData(0,"0020|0032").split('\\')]
         # ShiftCols = self.ds.ImagePositionPatient[0]
@@ -461,7 +461,7 @@ class DicomImagestoData:
 
 def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Images',ignore_lacking=False,
          out_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay_patients\Numpy', images_description='',
-         Contour_Names=['gtv','ablation'],associations=None):
+         Contour_Names=['gtv','ablation'],associations=None, thread_count = int(cpu_count()*0.75-1)):
     '''
     :param image_path: Path to the image files
     :param ignore_lacking: Ignore when a structure lacks all necessary contours, experimental
@@ -482,7 +482,6 @@ def main(image_path=r'K:\Morfeus\BMAnderson\CNN\Data\Data_Pancreas\Pancreas\Koay
                       associations=associations)
     Folders_w_Contours = Find_Contour_Files(Contour_Names=Contour_Names, check_paths=k.paths_to_check).paths_to_check
 
-    thread_count = cpu_count() - 1 # Leaves you one thread for doing things with
     print('This is running on ' + str(thread_count) + ' threads')
     q = Queue(maxsize=thread_count)
     A = [q, Contour_Names, Contour_Key, image_path, out_path, images_description, associations]
