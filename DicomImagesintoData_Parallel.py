@@ -1,5 +1,5 @@
 import pydicom, os, sys
-sys.path.append('.')
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from pydicom.tag import Tag
 import numpy as np
 from skimage import draw
