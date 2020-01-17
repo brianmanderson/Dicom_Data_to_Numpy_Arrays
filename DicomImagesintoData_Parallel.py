@@ -424,19 +424,14 @@ class DicomImagestoData:
         return self.Contours_to_mask()
 
     def Contours_to_mask(self):
-        mask = np.zeros([self.num_images, self.image_size_1, self.image_size_2], dtype='int8')
+        mask = np.zeros([len(self.dicom_names), self.image_size_1, self.image_size_2], dtype='int8')
         Contour_data = self.Liver_Locations
-        ShiftCols, ShiftRows, _ = [float(i) for i in self.reader.GetMetaData(0,"0020|0032").split('\\')]
-        # ShiftCols = self.ds.ImagePositionPatient[0]
-        # ShiftRows = self.ds.ImagePositionPatient[1]
-        PixelSize = self.dicom_images.GetSpacing()[0]
+        ShiftCols, ShiftRows, _ = [float(i) for i in self.reader.GetMetaData(0, "0020|0032").split('\\')]
+        PixelSize = self.dicom_handle.GetSpacing()[0]
         Mag = 1 / PixelSize
         mult1 = mult2 = 1
         if ShiftCols > 0:
             mult1 = -1
-        if ShiftRows > 0:
-            print('take a look at this one...')
-        #    mult2 = -1
 
         for i in range(len(Contour_data)):
             referenced_sop_instance_uid = Contour_data[i].ContourImageSequence[0].ReferencedSOPInstanceUID
@@ -450,9 +445,8 @@ class DicomImagestoData:
             col_val = [Mag * abs(x - mult1 * ShiftRows) for x in cols]
             row_val = [Mag * abs(x - mult2 * ShiftCols) for x in rows]
             temp_mask = self.poly2mask(col_val, row_val, [self.image_size_1, self.image_size_2])
-            mask[slice_index][temp_mask > 0] = 1
-            #scm.imsave('C:\\Users\\bmanderson\\desktop\\images\\mask_'+str(i)+'.png',mask_slice)
-
+            mask[slice_index, :, :][temp_mask > 0] += 1
+        mask[mask>1] = 0
         return mask
 
     def poly2mask(self,vertex_row_coords, vertex_col_coords, shape):
