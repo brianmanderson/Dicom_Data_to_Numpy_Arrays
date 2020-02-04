@@ -446,7 +446,7 @@ class DicomImagestoData:
             row_val = [Mag * abs(x - mult2 * ShiftCols) for x in rows]
             temp_mask = self.poly2mask(col_val, row_val, [self.image_size_1, self.image_size_2])
             mask[slice_index, :, :][temp_mask > 0] += 1
-        mask[mask>1] = 0
+        mask = mask % 2
         return mask
 
     def poly2mask(self,vertex_row_coords, vertex_col_coords, shape):
