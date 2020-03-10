@@ -6,10 +6,10 @@ from skimage import draw
 from threading import Thread
 from multiprocessing import cpu_count
 from queue import *
-from Utils import load_obj, plot_scroll_Image
-from Make_Patient_pickle_file_from_text import main_run
-from Separate_Numpy_Images_Into_Test_Train_Validation import separate
-from Get_Path_Info import make_location_pickle
+from .Utils import load_obj, plot_scroll_Image
+from .Make_Patient_pickle_file_from_text import main_run
+from .Separate_Numpy_Images_Into_Test_Train_Validation import separate
+from .Get_Path_Info import make_location_pickle
 import SimpleITK as sitk
 
 def correct_association_file(associations):
@@ -427,7 +427,7 @@ class DicomImagestoData:
         mask = np.zeros([len(self.dicom_names), self.image_size_1, self.image_size_2], dtype='int8')
         Contour_data = self.Liver_Locations
         ShiftCols, ShiftRows, _ = [float(i) for i in self.reader.GetMetaData(0, "0020|0032").split('\\')]
-        PixelSize = self.dicom_handle.GetSpacing()[0]
+        PixelSize = self.dicom_images.GetSpacing()[0]
         Mag = 1 / PixelSize
         mult1 = mult2 = 1
         if ShiftCols > 0:
