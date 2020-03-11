@@ -348,6 +348,10 @@ class DicomImagestoData:
         new_annotation.SetOrigin(self.dicom_images.GetOrigin())
         new_annotation.SetDirection(self.dicom_images.GetDirection())
         sitk.WriteImage(new_annotation,annotation_path)
+        fid = open(os.path.join(self.data_path, add,
+                                self.images_description + '_Iteration_' + str(self.iteration) + '.txt'), 'w+')
+        fid.write(str(self.ds.PatientID) + ',' + str(self.ds.SliceThickness) + ',' + str(self.ds.PixelSpacing[0]) + ',' + desc)
+        fid.close()
         return None
 
     def get_files_in_output_dirs(self,dirs):
