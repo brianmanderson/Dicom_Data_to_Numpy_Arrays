@@ -228,6 +228,9 @@ class DicomImagestoData:
     def __init__(self,Contour_Names = ['Liver'],Contour_Key={'Liver':1},path='S:\\SHARED\\Radiation physics\\BMAnderson\\PhD\\Liver_Ablation_Exports\\',
                  data_path='\\\\mymdafiles\\di_data1\\Morfeus\\bmanderson\\CNN\\Cervical_Data\\',
                  images_description= 'Images',associations=None, argmax=True):
+        print('This code is depricated, please go to https://github.com/brianmanderson/Dicom_RT_and_Images_to_Mask for the latest version')
+        print('If you really do not care, just delete these lines and have a good day ^^')
+        return None
         self.argmax = argmax
         self.guiding_exams = {}
         self.reader = sitk.ImageSeriesReader()
